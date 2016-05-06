@@ -16,9 +16,9 @@
 -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
   <!-- Action bar title when the app is in standalone (file manager) mode [CHAR LIMIT=32] -->
-  <string name="title_standalone">Files</string>
+  <string name="title_standalone">Soubory</string>
   <!-- Toast shown after successfully deleting files -->
-  <string name="toast_success_delete">Files deleted</string>
+  <string name="toast_success_delete">Soubory odstraněny</string>
   <!-- Title of the Delete confirmation dialog -->
   <string name="dialog_delete_confirm_title">Delete files?</string>
   <!-- Text shown in a toast when the user copies files -->
@@ -34,9 +34,9 @@
     <item quantity="other">%d files have been pasted. Upload might be finishing in background.</item>
   </plurals>
   <!-- Text show in the progress dialog while files are being copied -->
-  <string name="copy_in_progress">Copying...</string>
+  <string name="copy_in_progress">Copying\u2026</string>
   <!-- Text show in the progress dialog while files are being deleted -->
-  <string name="delete_in_progress">Deleting...</string>
+  <string name="delete_in_progress">Deleting\u2026</string>
   <plurals name="dialog_delete_confirm_message">
     <item quantity="one">This file will be permanently deleted!</item>
     <item quantity="few">This will permanently delete the %d files selected!</item>

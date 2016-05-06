@@ -4135,6 +4135,12 @@ public final class Settings {
         public static final String DASHBOARD_TILEVIEW_DIVIDERS = "dashboard_tileview_dividers";
 
         /**
+         * Dim amount control for power and reboot dialogs
+         * @hide
+         */
+        public static final String POWER_REBOOT_DIALOG_DIM = "power_reboot_dialog_dim";
+
+        /**
          * Whether to display dashboard tiles in a double line layout
          * @hide
          */
@@ -4623,12 +4629,6 @@ public final class Settings {
          * @hide
          */
         public static final String RECENT_CARD_TEXT_COLOR = "recent_card_text_color";
-
-        /**
-         * show bluetooth icon only when connected
-         * @hide
-         */
-        public static final String SHOW_BLUETOOTH_ICON = "show_bluetooth_icon";
 
         /**
          * Whether the phone ringtone should be played in an increasing manner
