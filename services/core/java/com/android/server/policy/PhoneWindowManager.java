@@ -32,6 +32,7 @@ import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
@@ -45,9 +46,9 @@ import android.content.res.TypedArray;
 import android.database.ContentObserver;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
+import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
-import android.hardware.camera2.CameraManager;
 import android.hardware.hdmi.HdmiControlManager;
 import android.hardware.hdmi.HdmiPlaybackClient;
 import android.hardware.hdmi.HdmiPlaybackClient.OneTouchPlayCallback;
@@ -92,6 +93,11 @@ import android.util.EventLog;
 import android.util.Log;
 import android.util.Slog;
 import android.util.SparseArray;
+import android.view.accessibility.AccessibilityEvent;
+import android.view.accessibility.AccessibilityManager;
+import android.view.animation.Animation;
+import android.view.animation.AnimationSet;
+import android.view.animation.AnimationUtils;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
@@ -105,10 +111,6 @@ import android.view.KeyCharacterMap;
 import android.view.KeyCharacterMap.FallbackAction;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
-import android.view.WindowManagerPolicyControl;
-
-import com.android.internal.logging.MetricsLogger;
-import com.android.internal.policy.PhoneWindow;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewConfiguration;
@@ -116,15 +118,19 @@ import android.view.WindowManager;
 import android.view.WindowManagerGlobal;
 import android.view.WindowManagerInternal;
 import android.view.WindowManagerPolicy;
-import android.view.accessibility.AccessibilityEvent;
-import android.view.accessibility.AccessibilityManager;
-import android.view.animation.Animation;
-import android.view.animation.AnimationSet;
-import android.view.animation.AnimationUtils;
+import android.view.WindowManagerPolicyControl;
+import android.widget.Toast;
+
 import com.android.internal.R;
+import com.android.internal.logging.MetricsLogger;
+import com.android.internal.os.DeviceKeyHandler;
+import com.android.internal.policy.IKeyguardService;
+import com.android.internal.policy.PhoneWindow;
 import com.android.internal.statusbar.IStatusBarService;
 import com.android.internal.util.gesture.EdgeGesturePosition;
 import com.android.internal.util.gesture.EdgeServiceConstants;
+import com.android.internal.utils.du.Config.ActionConfig;
+import com.android.internal.utils.du.Config.ButtonConfig;
 import com.android.internal.utils.du.DUActionUtils;
 import com.android.internal.utils.du.ActionHandler;
 import com.android.internal.utils.du.DUSystemReceiver;
@@ -135,6 +141,8 @@ import com.android.server.LocalServices;
 import com.android.server.policy.keyguard.KeyguardServiceDelegate;
 import com.android.server.policy.keyguard.KeyguardServiceDelegate.DrawnListener;
 
+import dalvik.system.DexClassLoader;
+
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -142,6 +150,7 @@ import java.io.PrintWriter;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.List;
+import java.lang.reflect.Constructor;
 
 import static android.view.WindowManager.LayoutParams.*;
 import static android.view.WindowManagerPolicy.WindowManagerFuncs.LID_ABSENT;
@@ -266,6 +275,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
 
     /** Amount of time (in milliseconds) to wait for windows drawn before powering on. */
     static final int WAITING_FOR_DRAWN_TIMEOUT = 1000;
+
+    private DeviceKeyHandler mDeviceKeyHandler;
 
     /**
      * Lock protecting internal state.  Must not call out into window
@@ -648,6 +659,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     boolean mHavePendingMediaKeyRepeatWithWakeLock;
 
     private int mCurrentUserId;
+    private boolean haveEnableGesture = false;
 
     // Maps global key codes to the components that will handle them.
     private GlobalKeyManager mGlobalKeyManager;
@@ -684,6 +696,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     private boolean mWasTorchActive;
 
     private HardkeyActionHandler mKeyHandler;
+    private String m3FingerGesture = ActionHandler.SYSTEMUI_TASK_NO_ACTION;
 
     private boolean mHasPermanentMenuKey;
 
@@ -855,6 +868,9 @@ public class PhoneWindowManager implements WindowManagerPolicy {
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.KEYGUARD_TOGGLE_TORCH), false, this,
                     UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.Secure.getUriFor(
+                    Settings.Secure.THREE_FINGER_GESTURE), false, this,
+                    UserHandle.USER_ALL);
             updateSettings();
         }
 
@@ -915,6 +931,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     private ImmersiveModeConfirmation mImmersiveModeConfirmation;
 
     private SystemGesturesPointerEventListener mSystemGestures;
+
+    private OPGesturesListener mOPGestures;
 
     private EdgeGestureManager.EdgeGestureActivationListener mEdgeGestureActivationListener = new EdgeGestureManager.EdgeGestureActivationListener() {
 
@@ -1575,6 +1593,14 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         return mContext.getResources().getConfiguration().isScreenRound();
     }
 
+    private void updateSwipeThreeFingerGestures() {
+        ButtonConfig config = ButtonConfig.getButton(mContext,
+                Settings.Secure.THREE_FINGER_GESTURE, true);
+        m3FingerGesture = config == null ? ActionHandler.SYSTEMUI_TASK_NO_ACTION : config
+                .getActionConfig(
+                        ActionConfig.PRIMARY).getAction();
+    }
+
     /** {@inheritDoc} */
     @Override
     public void init(Context context, IWindowManager windowManager,
@@ -1623,6 +1649,17 @@ public class PhoneWindowManager implements WindowManagerPolicy {
             mBurnInProtectionHelper = new BurnInProtectionHelper(
                     context, minHorizontal, maxHorizontal, minVertical, maxVertical, maxRadius);
         }
+
+        mOPGestures = new OPGesturesListener(context, new OPGesturesListener.Callbacks() {
+            @Override
+            public void onSwipeThreeFinger() {
+                if (!keyguardOn()) {
+                    final String action = UserHandle.getCallingUserId() == UserHandle.USER_OWNER ? m3FingerGesture
+                            : ActionHandler.SYSTEMUI_TASK_NO_ACTION;
+                    ActionHandler.performTask(mContext, action);
+                }
+            }
+        });
 
         mHandler = new PolicyHandler();
         mWakeGestureListener = new MyWakeGestureListener(mContext, mHandler);
@@ -1845,6 +1882,31 @@ public class PhoneWindowManager implements WindowManagerPolicy {
 
         mWindowManagerInternal.registerAppTransitionListener(
                 mStatusBarController.getAppTransitionListener());
+
+        String deviceKeyHandlerLib = mContext.getResources().getString(
+                com.android.internal.R.string.config_deviceKeyHandlerLib);
+
+        String deviceKeyHandlerClass = mContext.getResources().getString(
+                com.android.internal.R.string.config_deviceKeyHandlerClass);
+
+        if (!deviceKeyHandlerLib.isEmpty() && !deviceKeyHandlerClass.isEmpty()) {
+            DexClassLoader loader =  new DexClassLoader(deviceKeyHandlerLib,
+                    new ContextWrapper(mContext).getCacheDir().getAbsolutePath(),
+                    null,
+                    ClassLoader.getSystemClassLoader());
+            try {
+                Class<?> klass = loader.loadClass(deviceKeyHandlerClass);
+                Constructor<?> constructor = klass.getConstructor(Context.class);
+                mDeviceKeyHandler = (DeviceKeyHandler) constructor.newInstance(
+                        mContext);
+                if(DEBUG) Slog.d(TAG, "Device key handler loaded");
+            } catch (Exception e) {
+                Slog.w(TAG, "Could not instantiate device key handler "
+                        + deviceKeyHandlerClass + " from class "
+                        + deviceKeyHandlerLib, e);
+            }
+        }
+
     }
 
     /**
@@ -2044,12 +2106,18 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                 if (!mUsingEdgeGestureServiceForGestures && useEdgeService) {
                     mUsingEdgeGestureServiceForGestures = true;
                     mWindowManagerFuncs.unregisterPointerEventListener(mSystemGestures);
+                    haveEnableGesture = true;
+                    mWindowManagerFuncs.registerPointerEventListener(mOPGestures);
                 } else if (mUsingEdgeGestureServiceForGestures && !useEdgeService) {
                     mUsingEdgeGestureServiceForGestures = false;
                     mWindowManagerFuncs.registerPointerEventListener(mSystemGestures);
+                    haveEnableGesture = false;
+                    mWindowManagerFuncs.unregisterPointerEventListener(mOPGestures);
                 }
                 updateEdgeGestureListenerState();
             }
+            updateSwipeThreeFingerGestures();
+
             if (mSystemReady) {
                 int pointerLocation = Settings.System.getIntForUser(resolver,
                         Settings.System.POINTER_LOCATION, 0, UserHandle.USER_CURRENT);
@@ -3405,6 +3473,18 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         if (isValidGlobalKey(keyCode)
                 && mGlobalKeyManager.handleGlobalKey(mContext, keyCode, event)) {
             return -1;
+        }
+
+        // Specific device key handling
+        if (mDeviceKeyHandler != null) {
+            try {
+                // The device only should consume known keys.
+                if (mDeviceKeyHandler.handleKeyEvent(event)) {
+                    return -1;
+                }
+            } catch (Exception e) {
+                Slog.w(TAG, "Could not dispatch event to device key handler", e);
+            }
         }
 
         // Reserve all the META modifier combos for system behavior
@@ -5465,6 +5545,18 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         boolean useHapticFeedback = down
                 && (policyFlags & WindowManagerPolicy.FLAG_VIRTUAL) != 0
                 && event.getRepeatCount() == 0;
+
+        // Specific device key handling
+        if (mDeviceKeyHandler != null) {
+            try {
+                // The device only should consume known keys.
+                if (mDeviceKeyHandler.handleKeyEvent(event)) {
+                    return 0;
+                }
+            } catch (Exception e) {
+                Slog.w(TAG, "Could not dispatch event to device key handler", e);
+            }
+        }
 
         // Handle special keys.
         switch (keyCode) {

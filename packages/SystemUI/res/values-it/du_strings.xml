@@ -112,14 +112,14 @@
   <string name="quick_settings_themes_app_theme_with_label">Applica tema a <xliff:g id="application">%1$s </xliff:g></string>
   <string name="quick_settings_themes_app_theme">Applica tema all\'app</string>
   <string name="quick_settings_themes_system_theme">Applica Tema</string>
-  <string name="quick_settings_themes_default_theme">Default</string>
+  <string name="quick_settings_themes_default_theme">Predefinito</string>
   <string name="quick_settings_themes_match_system">Uguaglia tema di sistema</string>
   <!-- Task Manager -->
   <string name="task_manager_title">Task Manager</string>
   <string name="message_switch_fail">Impossibile passare a questa operazione, perché non ha interfacce.</string>
   <string name="tasklist_killall">Chiudi tutte</string>
   <string name="tasklist_memory_usage">"Memoria libera/totale: <xliff:g id="number">%s</xliff:g> / <xliff:g id="name">%s</xliff:g>"</string>
-  <string name="message_keep_one_launcher">Bisognerebbe tenere almeno un\'activity home!</string>
+  <string name="message_keep_one_launcher">Bisognerebbe tenere almeno un\'attività in memoria!</string>
   <!-- 4G LTE switch -->
   <string name="show_fourg_title">Visualizza 4G invece di LTE</string>
   <string name="show_fourg_summary">Sostituisce l\'indicatore LTE nella barra delle notifiche con 4G</string>
@@ -158,4 +158,16 @@
   <!-- Path data for portrait battery -->
   <!-- Path data for landscape battery -->
   <!-- Path data for circle battery -->
+  <!-- Screenshot Crop & Share -->
+  <string name="action_delete_success">Eliminato</string>
+  <string name="action_delete_fault">Eliminazione non riuscita</string>
+  <string name="action_save_success">Salvato</string>
+  <string name="action_save_fault">Salvataggio non riuscito</string>
+  <string name="pref_action_color_title">Colore pulsanti azione</string>
+  <string name="pref_action_color_summary">Scegli un colore preferito per i pulsanti azione</string>
+  <string name="pref_category_main">Impostazioni principali</string>
+  <string name="pref_category_user">Impostazioni utente</string>
+  <string name="pref_crop_behavior_title">Comportamento al taglio</string>
+  <string name="pref_crop_behavior_summary">Usa l\'immagine ritagliata anche se quella originale non è stata ritagliata con l\'azione di ritaglio</string>
+  <string name="action_ok">OK</string>
 </resources>

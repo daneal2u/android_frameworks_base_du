@@ -2481,6 +2481,21 @@ public final class Settings {
         public static final int SCREEN_BRIGHTNESS_MODE_AUTOMATIC = 1;
 
         /**
+         * The button brightness to be used while the screen is on or after a button press,
+         * depending on the value of {@link BUTTON_BACKLIGHT_TIMEOUT}.
+         * Valid value range is between 0 and {@link PowerManager#getMaximumButtonBrightness()}
+         * @hide
+         */
+        public static final String BUTTON_BRIGHTNESS = "button_brightness";
+
+        /**
+         * The time in ms to keep the button backlight on after pressing a button.
+         * A value of 0 will keep the buttons on for as long as the screen is on.
+         * @hide
+         */
+        public static final String BUTTON_BACKLIGHT_TIMEOUT = "button_backlight_timeout";
+
+        /**
          * Enable/disable brightness control in statusbar
          * @hide
          */
@@ -3378,6 +3393,12 @@ public final class Settings {
          */
         @Deprecated
         public static final String DOCK_SOUNDS_ENABLED = Global.DOCK_SOUNDS_ENABLED;
+
+        /**
+         * Check the proximity sensor during wakeup
+         * @hide
+         */
+        public static final String PROXIMITY_ON_WAKE = "proximity_on_wake";
 
         /**
          * Whether to play sounds when the keyguard is shown and dismissed.
@@ -4670,6 +4691,12 @@ public final class Settings {
          * @hide
          */
         public static final String RECENT_CARD_TEXT_COLOR = "recent_card_text_color";
+
+	/**
+         * Whether the phone volume up / down effect should be played
+         * @hide
+         */
+        public static final String VOLUME_ADJUST_SOUNDS_ENABLED = "volume_adjust_sounds_enabled";
 
         /**
          * Whether the phone ringtone should be played in an increasing manner
@@ -7056,6 +7083,12 @@ public final class Settings {
          * @hide
          */
         public static final String NAVIGATION_BAR_VISIBLE = "navigation_bar_visible";
+
+        /**
+         * Three Finger Gesture from Oppo
+         * @hide
+         */
+        public static final String THREE_FINGER_GESTURE = "three_finger_gesture";
 
         /**
          * The current night mode that has been selected by the user.  Owned
