@@ -33,7 +33,7 @@
   <!-- Button to reboot the phone into download, within the Reboot Options dialog -->
   <string name="reboot_download">Download</string>
   <!-- Reboot Progress Dialog. This is shown if the user chooses to reboot the phone. -->
-  <string name="reboot_progress">Reiniciando\u2026</string>
+  <string name="reboot_progress">Reiniciando</string>
   <!-- Reboot Confirmation Dialog.  When the user chooses to reboot the phone, there will be a confirmation dialog.  This is the message. -->
   <string name="reboot_confirm">Seu telefone será reiniciado.</string>
   <!-- label for item that reboots the phone in phone options dialog -->
@@ -60,7 +60,7 @@
   <string name="theme_reset_notification_title">Reiniciar tema</string>
   <string name="theme_reset_notification_body">Tema padrão restaurado devido a múltiplas falhas em aplicativos.</string>
   <!-- AOKP custom system animations -->
-  <string name="animation_fade">Desvanecer</string>
+  <string name="animation_fade">Esmaecer</string>
   <string name="animation_slide_right">Deslize para a direita</string>
   <string name="animation_slide_left">Deslize para a esquerda</string>
   <string name="animation_slide_right_no_fade">Deslize para a direita (Sem desvanecer)</string>
